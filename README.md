@@ -1,7 +1,13 @@
-# Spotify Web Downloader
-A Python CLI app for downloading songs/music videos/albums/playlists directly from Spotify.
+# Spotify to Jellyfin
+This is a fork of [glomatico/spotify-web-downloader](https://github.com/glomatico/spotify-web-downloader)
+intended to directly integrate with a jellyfin music library.
 
-**Discord Server:** https://discord.gg/aBjMEZ9tnq
+Additional Features:
+- Third party lyrics support :white_check_mark:
+- [WIP] sync / create respective playlists in jellyfin
+- [Planned for the future] Discord bot to request music
+
+A Python CLI app for downloading songs/music videos/albums/playlists directly from Spotify.
 
 ## Features
 * Download songs in AAC 128kbps or in AAC 256kbps with a premium account
