@@ -132,6 +132,11 @@ def load_config_file(
 )
 # Downloader specific options
 @click.option(
+    "--third-party-lyrics",
+    is_flag=True,
+    help="Try to pull lyrics from third parties like musixmatch, lrclib, deezer etc...",
+)
+@click.option(
     "--output-path",
     "-o",
     type=Path,
@@ -281,6 +286,7 @@ def main(
     log_level: str,
     print_exceptions: bool,
     cookies_path: Path,
+    third_party_lyrics: bool,
     output_path: Path,
     temp_path: Path,
     wvd_path: Path,
@@ -426,11 +432,6 @@ def main(
                         f"with title \"{metadata_gid['name']}\""
                     )
                 if not metadata_gid.get("original_video"):
-                    if metadata_gid.get("has_lyrics") and spotify_api.is_premium:
-                        logger.debug("Getting lyrics")
-                        lyrics = downloader_song.get_lyrics(track_id)
-                    else:
-                        lyrics = Lyrics()
                     logger.debug("Getting album metadata")
                     album_metadata = spotify_api.get_album(
                         spotify_api.gid_to_track_id(metadata_gid["album"]["gid"])
@@ -440,9 +441,24 @@ def main(
                     tags = downloader_song.get_tags(
                         metadata_gid,
                         album_metadata,
-                        track_credits,
-                        lyrics.unsynced,
+                        track_credits
                     )
+                    if metadata_gid.get("has_lyrics") and spotify_api.is_premium:
+                        logger.debug("ALARM! Getting lyrics")
+                        lyrics = downloader_song.get_lyrics(track_id)
+                    if not lyrics.synced and third_party_lyrics:
+                        logger.debug("Getting third-party lyrics")
+                        try:
+                            logger.debug(f"Searching third-party lyrics for {tags['artist']} - {tags['title']}")
+                            tp_lyrics = downloader_song.get_third_party_lyrics(tags["title"], tags["artist"])
+                        except Exception as e:
+                            logger.error(
+                                f'({queue_progress}) Failed to get third-party lyrics {e}',
+                                exc_info=print_exceptions,
+                            )
+                        if tp_lyrics.synced or not lyrics.unsynced:
+                            lyrics = tp_lyrics
+                    tags["lyrics"] = lyrics.unsynced
                     final_path = downloader_song.get_final_path(tags)
                     lrc_path = downloader_song.get_lrc_path(final_path)
                     cover_path = downloader_song.get_cover_path(final_path)

@@ -1,6 +1,9 @@
 import datetime
+import re
 import subprocess
 from pathlib import Path
+
+import syncedlyrics
 
 from pywidevine import PSSH
 from yt_dlp import YoutubeDL
@@ -8,6 +11,8 @@ from yt_dlp import YoutubeDL
 from .downloader import Downloader
 from .enums import DownloadModeSong, RemuxMode
 from .models import Lyrics
+
+TIMESTAMP_REGEX = r'\[\d{2}:\d{2}\.\d+\] '
 
 
 class DownloaderSong:
@@ -90,8 +95,7 @@ class DownloaderSong:
         self,
         metadata_gid: dict,
         album_metadata: dict,
-        track_credits: dict,
-        lyrics_unsynced: str,
+        track_credits: dict
     ) -> dict:
         isrc = None
         if metadata_gid.get("external_id"):
@@ -127,7 +131,6 @@ class DownloaderSong:
             "disc_total": album_metadata["tracks"]["items"][-1]["disc_number"],
             "isrc": isrc.get("id") if isrc is not None else None,
             "label": album_metadata.get("label"),
-            "lyrics": lyrics_unsynced,
             "media_type": 1,
             "producer": self.downloader.get_artist(producers) if producers else None,
             "rating": 1 if metadata_gid.get("explicit") else 0,
@@ -261,6 +264,20 @@ class DownloaderSong:
                 lyrics.synced += f'[{self.get_lyrics_synced_timestamp_lrc(int(line["startTimeMs"]))}]{line["words"]}\n'
             lyrics.unsynced += f'{line["words"]}\n'
         lyrics.unsynced = lyrics.unsynced[:-1]
+        return lyrics
+
+    def get_third_party_lyrics(self, title: str, artist: str) -> Lyrics:
+        query = f"{artist} - {title}"[:50]
+        lyrics = Lyrics()
+        lyrics_string = syncedlyrics.search(query, providers=["musixmatch", "lrclib", "netease", "genius"])
+        if lyrics_string is None:
+            return lyrics
+        lines_sample = lyrics_string.split('\n')[5:10]
+        if all(re.match(TIMESTAMP_REGEX, line) for line in lines_sample):
+            lyrics.synced = lyrics_string
+            lyrics.unsynced = re.sub(TIMESTAMP_REGEX, '', lyrics_string)
+        else:
+            lyrics.unsynced = lyrics_string
         return lyrics
 
     def get_cover_path(self, final_path: Path) -> Path:
