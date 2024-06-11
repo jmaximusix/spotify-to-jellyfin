@@ -3,5 +3,5 @@ pybase62
 python-dotenv
 pywidevine
 pyyaml
-syncedlyrics
+git+https://github.com/jmaximusix/syncedlyrics.git
 yt-dlp
