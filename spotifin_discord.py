@@ -3,9 +3,7 @@ import sys
 import discord
 from discord import app_commands
 from spotify_to_jellyfin.notcli import request_music
-import dotenv
 
-dotenv.load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 MUSIC_LIBRARY_PATH = os.getenv("MUSIC_LIBRARY_PATH")
 intents = discord.Intents.default()
