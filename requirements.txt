@@ -1,4 +1,5 @@
 click
+discord
 pybase62
 python-dotenv
 pywidevine
