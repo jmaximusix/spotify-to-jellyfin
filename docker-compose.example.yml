@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    container_name: spotifin
+    env_file: .env
+    volumes:
+      - ./config:/app/config
+      - /path/to/music/library:/music
+    restart: unless-stopped

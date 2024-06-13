@@ -6,3 +6,5 @@ __pycache__
 !README.md
 !requirements.txt
 !spotifin_discord.py
+!docker-compose.example.yml
+!Dockerfile
