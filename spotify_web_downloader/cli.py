@@ -18,6 +18,7 @@ from .downloader_song import DownloaderSong
 from .enums import DownloadModeSong, DownloadModeVideo, RemuxMode
 from .models import Lyrics
 from .spotify_api import SpotifyApi
+from .jellyfin import JellyfinApi
 
 spotify_api_sig = inspect.signature(SpotifyApi.__init__)
 downloader_sig = inspect.signature(Downloader.__init__)
@@ -322,9 +323,12 @@ def main(
     if not sp_dc_cookie:
         sp_dc_cookie = os.getenv("SP_DC_COOKIE")
     if not sp_dc_cookie:
-        logger.critical("Environment variable or commandline argument for sp_dc_cookie not found")
+        logger.critical(
+            "Environment variable or commandline argument for sp_dc_cookie not found"
+        )
         return
     spotify_api = SpotifyApi(sp_dc_cookie)
+    jellyfin_api = JellyfinApi(os.getenv("JELLYFIN_URL"), os.getenv("JELLYFIN_API_KEY"))
     downloader = Downloader(
         spotify_api,
         output_path,
@@ -356,7 +360,7 @@ def main(
         download_mode_video,
     )
     if not spotify_api.is_premium:
-        logger.warning("Free account detected, lyrics will not be downloaded")
+        logger.warning("Free account detected. Premium features are unavailable")
     if not lrc_only:
         if wvd_path and not wvd_path.exists():
             logger.critical(X_NOT_FOUND_STRING.format(".wvd file", wvd_path))
@@ -398,6 +402,7 @@ def main(
         urls = [url.strip() for url in Path(urls[0]).read_text().splitlines()]
     for url_index, url in enumerate(urls, start=1):
         url_progress = f"URL {url_index}/{len(urls)}"
+        pathslist = []
         try:
             url_info = downloader.get_url_info(url)
             download_queue = downloader.get_download_queue(url_info)
@@ -443,27 +448,29 @@ def main(
                     logger.debug("Getting track credits")
                     track_credits = spotify_api.get_track_credits(track_id)
                     tags = downloader_song.get_tags(
-                        metadata_gid,
-                        album_metadata,
-                        track_credits
+                        metadata_gid, album_metadata, track_credits
                     )
                     if metadata_gid.get("has_lyrics") and spotify_api.is_premium:
-                        logger.debug("ALARM! Getting lyrics")
                         lyrics = downloader_song.get_lyrics(track_id)
                     if not lyrics.synced and third_party_lyrics:
                         logger.debug("Getting third-party lyrics")
                         try:
-                            logger.debug(f"Searching third-party lyrics for {tags['artist']} - {tags['title']}")
-                            tp_lyrics = downloader_song.get_third_party_lyrics(tags["title"], tags["artist"])
+                            logger.debug(
+                                f"Searching third-party lyrics for {tags['artist']} - {tags['title']}"
+                            )
+                            tp_lyrics = downloader_song.get_third_party_lyrics(
+                                tags["title"], tags["artist"]
+                            )
                         except Exception as e:
                             logger.error(
-                                f'({queue_progress}) Failed to get third-party lyrics {e}',
+                                f"({queue_progress}) Failed to get third-party lyrics {e}",
                                 exc_info=print_exceptions,
                             )
                         if tp_lyrics.synced or not lyrics.unsynced:
                             lyrics = tp_lyrics
                     tags["lyrics"] = lyrics.unsynced
                     final_path = downloader_song.get_final_path(tags)
+                    pathslist.append(final_path)
                     lrc_path = downloader_song.get_lrc_path(final_path)
                     cover_path = downloader_song.get_cover_path(final_path)
                     cover_url = downloader.get_cover_url(metadata_gid, "LARGE")
@@ -634,4 +641,7 @@ def main(
                 if temp_path.exists():
                     logger.debug(f'Cleaning up "{temp_path}"')
                     downloader.cleanup_temp_path()
+        if url_info.type == "playlist":
+            print(f"Trying to sync playlist to jellyfin")
+            print(jellyfin_api.lookup_song_id(pathslist[0]))
     logger.info(f"Done ({error_count} error(s))")
