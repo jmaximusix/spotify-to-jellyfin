@@ -8,7 +8,7 @@ class JellyfinApi:
     def __init__(self, base_url: str, api_token: str):
         self.auth = {"Authorization": f'MediaBrowser Token="{api_token}"'}
         self.base_url = base_url
-        if not os.path.exists("users.json"):
+        if not os.path.exists("./config/users.json"):
             print(
                 "[Jellyfin API] No users.json found, creating one. Remember to fill in the discord ids."
             )
@@ -22,10 +22,10 @@ class JellyfinApi:
                         "discord_id": None,
                     }
                 )
-            with open("users.json", "w") as f:
+            with open("./config/users.json", "w") as f:
                 json.dump(self.users, f, indent=4)
         else:
-            with open("users.json", "r") as f:
+            with open("./config/users.json", "r") as f:
                 self.users = json.load(f)
 
     def lookup_jellyfin_userid(self, discord_id: str) -> str:

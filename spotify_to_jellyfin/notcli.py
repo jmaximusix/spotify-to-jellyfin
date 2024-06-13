@@ -162,8 +162,8 @@ def request_music(
     if url_info.type == "playlist" and discord_id:
         playlist_name = spotify_api.get_playlist(url_info.id)["name"]
         print(f'Trying to sync playlist "{playlist_name}" to jellyfin')
-        if os.path.exists("playlists.json"):
-            with open("playlists.json", "r") as f:
+        if os.path.exists("./config/playlists.json"):
+            with open("./config/playlists.json", "r") as f:
                 playlist_lookup = json.load(f)
         else:
             playlist_lookup = {}
@@ -182,6 +182,6 @@ def request_music(
                 playlist_public,
             )
             playlist_lookup[url_info.id] = jellyfin_playlist_id
-            with open("playlists.json", "w") as f:
+            with open("./config/playlists.json", "w") as f:
                 json.dump(playlist_lookup, f, indent=4)
     logger.info(f"Done ({error_count} error(s))")
