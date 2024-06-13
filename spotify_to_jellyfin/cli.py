@@ -18,7 +18,6 @@ from .downloader_song import DownloaderSong
 from .enums import DownloadModeSong, DownloadModeVideo, RemuxMode
 from .models import Lyrics
 from .spotify_api import SpotifyApi
-from .jellyfin import JellyfinApi
 
 spotify_api_sig = inspect.signature(SpotifyApi.__init__)
 downloader_sig = inspect.signature(Downloader.__init__)
@@ -328,7 +327,6 @@ def main(
         )
         return
     spotify_api = SpotifyApi(sp_dc_cookie)
-    jellyfin_api = JellyfinApi(os.getenv("JELLYFIN_URL"), os.getenv("JELLYFIN_API_KEY"))
     downloader = Downloader(
         spotify_api,
         output_path,
@@ -402,7 +400,6 @@ def main(
         urls = [url.strip() for url in Path(urls[0]).read_text().splitlines()]
     for url_index, url in enumerate(urls, start=1):
         url_progress = f"URL {url_index}/{len(urls)}"
-        pathslist = []
         try:
             url_info = downloader.get_url_info(url)
             download_queue = downloader.get_download_queue(url_info)
@@ -470,7 +467,6 @@ def main(
                             lyrics = tp_lyrics
                     tags["lyrics"] = lyrics.unsynced
                     final_path = downloader_song.get_final_path(tags)
-                    pathslist.append(final_path)
                     lrc_path = downloader_song.get_lrc_path(final_path)
                     cover_path = downloader_song.get_cover_path(final_path)
                     cover_url = downloader.get_cover_url(metadata_gid, "LARGE")
