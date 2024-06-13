@@ -1,6 +1,7 @@
 import os
-import requests
 import json
+import requests
+import time
 
 
 class JellyfinApi:
@@ -28,18 +29,23 @@ class JellyfinApi:
                 self.users = json.load(f)
 
     def lookup_jellyfin_userid(self, discord_id: str) -> str:
+        assert discord_id is not None, "Valid discord id required"
         for user in self.users:
-            if user["discord_id"] == discord_id:
+            if str(user["discord_id"]) == discord_id:
                 return user["jellyfin_id"]
         raise ValueError("User not found in users.json")
 
     def lookup_song_id(self, path: str) -> str:
         relative_path = path.rsplit("/", maxsplit=3)[1:]
         title = relative_path[2][3:-4]
-        song = requests.get(
-            f"{self.base_url}/Items?searchTerm={title}&includeItemTypes=Audio&Recursive=true&fields=Path",
-            headers=self.auth,
-        ).json()["Items"][0]
+        searchTerm = longest_ascii_substring(title)
+        try:
+            song = requests.get(
+                f"{self.base_url}/Items?searchTerm={searchTerm}&includeItemTypes=Audio&Recursive=true&fields=Path",
+                headers=self.auth,
+            ).json()["Items"][0]
+        except IndexError:
+            raise ValueError(f"Couldn't find song in Jellyfin: {title}")
         relative_song_path = song["Path"].rsplit("/", maxsplit=3)[1:]
         assert relative_path == relative_song_path, "Couldn't find song in Jellyfin"
         return song["Id"]
@@ -68,18 +74,40 @@ class JellyfinApi:
         ).json()
         return response["Id"]
 
+    def update_playlist(
+        self,
+        playlist_id: str,
+        playlist_name: str,
+        songs: list[str],
+        public: bool = False,
+    ) -> None:
+        body = {
+            "Name": playlist_name,
+            "Ids": songs,
+            "IsPublic": public,
+        }
+        response = requests.post(
+            f"{self.base_url}/Playlists/{playlist_id}",
+            headers=self.auth,
+            json=body,
+        )
+        assert response.status_code == 204, "Failed to update playlist"
 
-# print(
-#     lookup_jellyfin_id(
-#         "/soos/yeet/Florian Paul & Die Kapelle der letzten H/Dazwischen/09 Bella Maria.m4a"
-#     )
-# )
+    def refresh_library(self) -> None:
+        requests.post(f"{self.base_url}/Library/Refresh", headers=self.auth)
+        time.sleep(5)
 
-bella_maria = "8fb51db26b49ebe2c3b7992c845f3e7e"
-der_zirkus = "0916739a3f9f0c004af563c1629d0477"
 
-# print(
-#     create_playlist(
-#         "LolYeetus", [bella_maria, der_zirkus], "1741114c47c04c619998619b2ac0ebdf"
-#     )
-# )
+def longest_ascii_substring(s: str) -> str:
+    longest_substring = ""
+    current_substring = ""
+
+    for char in s:
+        if ord(char) < 128:  # ASCII characters have an ordinal value less than 128
+            current_substring += char
+            if len(current_substring) > len(longest_substring):
+                longest_substring = current_substring
+        else:
+            current_substring = ""
+
+    return longest_substring

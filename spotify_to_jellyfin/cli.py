@@ -276,6 +276,12 @@ def load_config_file(
     callback=load_config_file,
     help="Do not use a config file.",
 )
+# Jellyfin-discord integration
+@click.option(
+    "--discord-id",
+    type=str,
+    help="Discord User ID.",
+)
 def main(
     urls: list[str],
     download_music_video: bool,
@@ -310,6 +316,7 @@ def main(
     template_folder_music_video: str,
     template_file_music_video: str,
     download_mode_video: DownloadModeVideo,
+    discord_id: str,
     no_config_file: bool,
 ) -> None:
     dotenv.load_dotenv()
@@ -641,7 +648,30 @@ def main(
                 if temp_path.exists():
                     logger.debug(f'Cleaning up "{temp_path}"')
                     downloader.cleanup_temp_path()
-        if url_info.type == "playlist":
-            print(f"Trying to sync playlist to jellyfin")
-            print(jellyfin_api.lookup_song_id(pathslist[0]))
+        if url_info.type == "playlist" and discord_id:
+            playlist_name = spotify_api.get_playlist(url_info.id)["name"]
+            print(f'Trying to sync playlist "{playlist_name}" to jellyfin')
+            if os.path.exists("playlists.json"):
+                with open("playlists.json", "r") as f:
+                    playlist_lookup = json.load(f)
+            else:
+                playlist_lookup = {}
+            jellyfin_api.refresh_library()
+            song_ids = []
+            for path in pathslist:
+                song_ids.append(jellyfin_api.lookup_song_id(str(path)))
+            if url_info.id in playlist_lookup:
+                jellyfin_playlist_id = playlist_lookup[url_info.id]
+                jellyfin_api.update_playlist(
+                    jellyfin_playlist_id, playlist_name, song_ids
+                )
+            else:
+                jellyfin_playlist_id = jellyfin_api.create_playlist(
+                    playlist_name,
+                    song_ids,
+                    jellyfin_api.lookup_jellyfin_userid(discord_id),
+                )
+                playlist_lookup[url_info.id] = jellyfin_playlist_id
+                with open("playlists.json", "w") as f:
+                    json.dump(playlist_lookup, f, indent=4)
     logger.info(f"Done ({error_count} error(s))")
