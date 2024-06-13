@@ -4,9 +4,12 @@ intended to directly integrate with a jellyfin music library.
 
 Additional Features:
 - Third party lyrics support :white_check_mark:
-- [WIP] sync / create respective playlists in jellyfin
-- [Planned for the future] Discord bot to request music
+- sync / create respective playlists in jellyfin :white_check_mark: 
+- discord bot to request music :white_check_mark:
 
+Code is working, but a bit messy. As long as it works I'm too lazy to improve it :sweat_smile:
+
+ ---
 A Python CLI app for downloading songs/music videos/albums/playlists directly from Spotify.
 
 ## Features
