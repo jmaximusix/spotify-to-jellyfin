@@ -7,6 +7,7 @@ import dotenv
 
 dotenv.load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+MUSIC_LIBRARY_PATH = os.getenv("MUSIC_LIBRARY_PATH")
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
@@ -35,7 +36,7 @@ async def request(interaction: discord.Interaction, link: str, public: bool = Fa
         f"Request for {link} received!", ephemeral=True
     )
     try:
-        request_music(link, interaction.user.id, "./output", public)
+        request_music(link, interaction.user.id, MUSIC_LIBRARY_PATH, public)
         await interaction.channel.send(f"{link} is now available on jellyfin!")
     except Exception as e:
         await interaction.channel.send(
