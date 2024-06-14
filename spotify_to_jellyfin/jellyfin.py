@@ -81,6 +81,9 @@ class JellyfinApi:
         songs: list[str],
         public: bool = False,
     ) -> None:
+        raise Exception(
+            "Updating existing playlists is not supported because of jellyfin bug #12092"
+        )
         body = {
             "Name": playlist_name,
             "Ids": songs,
