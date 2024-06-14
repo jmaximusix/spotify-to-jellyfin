@@ -28,10 +28,10 @@ class JellyfinApi:
             with open("./config/users.json", "r") as f:
                 self.users = json.load(f)
 
-    def lookup_jellyfin_userid(self, discord_id: str) -> str:
+    def lookup_jellyfin_userid(self, discord_id: int) -> str:
         assert discord_id is not None, "Valid discord id required"
         for user in self.users:
-            if str(user["discord_id"]) == discord_id:
+            if user["discord_id"] == discord_id:
                 return user["jellyfin_id"]
         raise ValueError("User not found in users.json")
 
