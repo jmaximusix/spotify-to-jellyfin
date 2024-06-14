@@ -86,11 +86,13 @@ class JellyfinApi:
             "Ids": songs,
             "IsPublic": public,
         }
+        print(f"{self.base_url}/Playlists/{playlist_id}")
         response = requests.post(
             f"{self.base_url}/Playlists/{playlist_id}",
             headers=self.auth,
             json=body,
         )
+        print(response.json())
         assert response.status_code == 204, "Failed to update playlist"
 
     def refresh_library(self) -> None:
