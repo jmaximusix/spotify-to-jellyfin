@@ -173,7 +173,9 @@ def request_music(
             song_ids.append(jellyfin_api.lookup_song_id(str(path)))
         if url_info.id in playlist_lookup:
             jellyfin_playlist_id = playlist_lookup[url_info.id]
-            jellyfin_api.update_playlist(jellyfin_playlist_id, playlist_name, song_ids)
+            jellyfin_api.update_playlist(
+                jellyfin_playlist_id, playlist_name, song_ids, logger, playlist_public
+            )
         else:
             jellyfin_playlist_id = jellyfin_api.create_playlist(
                 playlist_name,
