@@ -9,6 +9,9 @@ MUSIC_LIBRARY_PATH = os.getenv("MUSIC_LIBRARY_PATH")
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+channel_id = int(os.getenv("SPOTIFIN_CHANNEL_ID"))
+assert channel_id, "SPOTIFIN_CHANNEL_ID not set"
+spotifin_channel = client.get_channel(channel_id)
 
 
 @client.event
@@ -35,9 +38,9 @@ async def request(interaction: discord.Interaction, link: str, public: bool = Fa
     )
     try:
         request_music(link, interaction.user.id, MUSIC_LIBRARY_PATH, public)
-        await interaction.channel.send(f"{link} is now available on jellyfin!")
+        await spotifin_channel.send(f"{link} is now available on jellyfin!")
     except Exception as e:
-        await interaction.channel.send(
+        await spotifin_channel.send(
             f":bangbang: An error occurred during the processing of the request for {link}: ```{e}```"
         )
 
