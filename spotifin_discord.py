@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import discord
 from discord import app_commands
 from spotify_to_jellyfin.notcli import request_music
@@ -9,8 +10,8 @@ MUSIC_LIBRARY_PATH = os.getenv("MUSIC_LIBRARY_PATH")
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
-channel_id = int(os.getenv("SPOTIFIN_CHANNEL_ID"))
-assert channel_id, "SPOTIFIN_CHANNEL_ID not set"
+spotifin_channel_id = int(os.getenv("SPOTIFIN_CHANNEL_ID"))
+assert spotifin_channel_id, "SPOTIFIN_CHANNEL_ID not set"
 
 
 @client.event
@@ -32,15 +33,24 @@ async def on_ready():
     public="[For playlists] Whether the playlist should be visible to everyone",
 )
 async def request(interaction: discord.Interaction, link: str, public: bool = False):
-    spotifin_channel = client.get_channel(channel_id)
+    link = link.split("?si=")[0]
+    if not public and link.split("/")[-2] == "playlist":
+        channel = interaction.user.dm_channel
+        if not channel:
+            channel = await interaction.user.create_dm()
+    else:
+        channel = client.get_channel(spotifin_channel_id)
     await interaction.response.send_message(
         f"Request for {link} received!", ephemeral=True
     )
     try:
-        request_music(link, interaction.user.id, MUSIC_LIBRARY_PATH, public)
-        await spotifin_channel.send(f"{link} is now available on jellyfin!")
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None, request_music, link, interaction.user.id, MUSIC_LIBRARY_PATH, public
+        )
+        await channel.send(f"{link} is now available on jellyfin!")
     except Exception as e:
-        await spotifin_channel.send(
+        await channel.send(
             f":bangbang: An error occurred during the processing of the request for {link}: ```{e}```"
         )
 
