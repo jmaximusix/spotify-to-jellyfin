@@ -11,7 +11,6 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 channel_id = int(os.getenv("SPOTIFIN_CHANNEL_ID"))
 assert channel_id, "SPOTIFIN_CHANNEL_ID not set"
-spotifin_channel = client.get_channel(channel_id)
 
 
 @client.event
@@ -33,6 +32,7 @@ async def on_ready():
     public="[For playlists] Whether the playlist should be visible to everyone",
 )
 async def request(interaction: discord.Interaction, link: str, public: bool = False):
+    spotifin_channel = client.get_channel(channel_id)
     await interaction.response.send_message(
         f"Request for {link} received!", ephemeral=True
     )
