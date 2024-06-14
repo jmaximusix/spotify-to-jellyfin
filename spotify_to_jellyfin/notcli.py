@@ -13,9 +13,10 @@ from pathlib import Path
 def request_music(
     url: str, discord_id: int, output_path: str, playlist_public: bool = False
 ):
-    third_party_lyrics = True
+    third_party_lyrics = os.getenv("THIRD_PARTY_LYRICS") == "true"
+    overwrite = os.getenv("OVERWRITE") == "true"
     print_exceptions = True
-    overwrite = False
+
     logging.basicConfig(
         format="[%(levelname)-8s %(asctime)s] %(message)s",
         datefmt="%H:%M:%S",
