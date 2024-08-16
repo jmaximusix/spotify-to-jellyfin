@@ -160,6 +160,7 @@ def request_music(
             if downloader.temp_path.exists():
                 logger.debug(f'Cleaning up "{downloader.temp_path}"')
                 downloader.cleanup_temp_path()
+    jellyfin_api.refresh_library()
     if url_info.type == "playlist" and discord_id:
         playlist_name = spotify_api.get_playlist(url_info.id)["name"]
         print(f'Trying to sync playlist "{playlist_name}" to jellyfin')
@@ -168,7 +169,6 @@ def request_music(
                 playlist_lookup = json.load(f)
         else:
             playlist_lookup = {}
-        jellyfin_api.refresh_library()
         song_ids = []
         for path in pathslist:
             song_ids.append(jellyfin_api.lookup_song_id(str(path)))
