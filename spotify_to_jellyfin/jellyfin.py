@@ -37,9 +37,8 @@ class JellyfinApi:
 
     def lookup_song_id(self, path: str) -> str:
         relative_path = path.rsplit("/", maxsplit=3)[1:]
-        title = relative_path[2][3:-4]
+        title = relative_path[2][:-4].split(" ")[1:]
         searchTerm = longest_ascii_substring(title)
-        print(f"Searching for {searchTerm} in jellyfin library")
         try:
             song = requests.get(
                 f"{self.base_url}/Items?searchTerm={searchTerm}&includeItemTypes=Audio&Recursive=true&fields=Path",
