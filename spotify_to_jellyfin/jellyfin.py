@@ -37,7 +37,7 @@ class JellyfinApi:
 
     def lookup_song_id(self, path: str) -> str:
         relative_path = path.rsplit("/", maxsplit=3)[1:]
-        title = relative_path[2][:-4].split(" ")[1:]
+        title = " ".join(relative_path[2][:-4].split(" ")[1:])
         searchTerm = longest_ascii_substring(title)
         try:
             song = requests.get(
