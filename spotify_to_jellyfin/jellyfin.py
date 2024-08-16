@@ -39,16 +39,15 @@ class JellyfinApi:
         relative_path = path.rsplit("/", maxsplit=3)[1:]
         title = " ".join(relative_path[2][:-4].split(" ")[1:])
         searchTerm = longest_ascii_substring(title)
-        try:
-            song = requests.get(
+        search_res = requests.get(
                 f"{self.base_url}/Items?searchTerm={searchTerm}&includeItemTypes=Audio&Recursive=true&fields=Path",
                 headers=self.auth,
-            ).json()["Items"][0]
-        except IndexError:
-            raise ValueError(f"Couldn't find song in Jellyfin: {title}")
-        relative_song_path = song["Path"].rsplit("/", maxsplit=3)[1:]
-        assert relative_path == relative_song_path, "Couldn't find song in Jellyfin"
-        return song["Id"]
+            ).json()["Items"]
+        for song in search_res:
+            relative_song_path = song["Path"].rsplit("/", maxsplit=3)[1:]
+            if relative_path == relative_song_path:
+                return song["Id"]
+        raise ValueError(f"Couldn't find song in Jellyfin: {title}")
 
     def create_playlist(
         self,
