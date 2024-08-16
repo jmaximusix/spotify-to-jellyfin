@@ -39,6 +39,7 @@ class JellyfinApi:
         relative_path = path.rsplit("/", maxsplit=3)[1:]
         title = relative_path[2][3:-4]
         searchTerm = longest_ascii_substring(title)
+        print(f"Searching for {searchTerm} in jellyfin library")
         try:
             song = requests.get(
                 f"{self.base_url}/Items?searchTerm={searchTerm}&includeItemTypes=Audio&Recursive=true&fields=Path",
@@ -98,7 +99,7 @@ class JellyfinApi:
 
     def refresh_library(self) -> None:
         requests.post(f"{self.base_url}/Library/Refresh", headers=self.auth)
-        time.sleep(5)
+        time.sleep(10)
 
 
 def longest_ascii_substring(s: str) -> str:

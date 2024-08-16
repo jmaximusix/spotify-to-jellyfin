@@ -13,6 +13,7 @@ tree = app_commands.CommandTree(client)
 spotifin_channel_id = int(os.getenv("SPOTIFIN_CHANNEL_ID"))
 assert spotifin_channel_id, "SPOTIFIN_CHANNEL_ID not set"
 
+request_music_lock = asyncio.Lock()
 
 @client.event
 async def on_ready():
@@ -33,26 +34,33 @@ async def on_ready():
     public="[For playlists] Whether the playlist should be visible to everyone",
 )
 async def request(interaction: discord.Interaction, link: str, public: bool = False):
-    link = link.split("?si=")[0]
-    if not public and link.split("/")[-2] == "playlist":
-        channel = interaction.user.dm_channel
-        if not channel:
-            channel = await interaction.user.create_dm()
-    else:
-        channel = client.get_channel(spotifin_channel_id)
-    await interaction.response.send_message(
-        f"Request for {link} received!", ephemeral=True
-    )
-    try:
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            None, request_music, link, interaction.user.id, MUSIC_LIBRARY_PATH, public
+    if request_music_lock.locked():
+        await interaction.response.send_message(
+            "Another request is currently being processed. Please try again later.",
+            ephemeral=True,
         )
-        await channel.send(f"{link} is now available on jellyfin!")
-    except Exception as e:
-        await channel.send(
-            f":bangbang: An error occurred during the processing of the request for {link}: ```{e}```"
+        return
+    async with request_music_lock:
+        link = link.split("?si=")[0]
+        if not public and link.split("/")[-2] == "playlist":
+            channel = interaction.user.dm_channel
+            if not channel:
+                channel = await interaction.user.create_dm()
+        else:
+            channel = client.get_channel(spotifin_channel_id)
+        await interaction.response.send_message(
+            f"Request for {link} received!", ephemeral=True
         )
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None, request_music, link, interaction.user.id, MUSIC_LIBRARY_PATH, public
+            )
+            await channel.send(f"{link} is now available on jellyfin!")
+        except Exception as e:
+            await channel.send(
+                f":bangbang: An error occurred during the processing of the request for {link}: ```{e}```"
+            )
 
 
 client.run(token=TOKEN)
